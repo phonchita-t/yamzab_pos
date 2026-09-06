@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+.pnp/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# build output
+client/dist/
+server/dist/
+
+# prisma
+server/prisma/*.db
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.fleet/
