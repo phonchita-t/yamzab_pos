@@ -181,4 +181,4 @@ the schema.
 | `npm run db:reset` | drop, re-migrate, re-seed |
 | `npm run build` | production build of the client |
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
