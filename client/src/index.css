@@ -12,6 +12,13 @@
   body {
     @apply bg-stone-100 text-charcoal antialiased;
     -webkit-tap-highlight-color: transparent;
+    /* Thai script stacks vowels/tone marks above & below the base glyph —
+       a slightly looser default leading keeps them from clipping. */
+    line-height: 1.6;
+  }
+  /* Headings keep their tight tracking but need breathing room for Thai marks. */
+  h1, h2, h3, h4 {
+    line-height: 1.35;
   }
 }
 

@@ -42,6 +42,9 @@ export default function MenuManagerPage() {
   const save = async (form) => {
     const payload = {
       ...form,
+      // Thai name is primary; fall back to it when no English name is entered.
+      name: (form.name || form.nameTh || '').trim(),
+      nameTh: (form.nameTh || '').trim() || null,
       price: Number(form.price),
       cost: Number(form.cost),
       stockQty: Number(form.stockQty),
@@ -54,7 +57,7 @@ export default function MenuManagerPage() {
   };
 
   const remove = async (p) => {
-    if (!confirm(`Deactivate "${p.name}"?`)) return;
+    if (!confirm(`ปิดการใช้งาน "${p.nameTh || p.name}" หรือไม่?`)) return;
     await api.del(`/menu/products/${p.id}`);
     load();
   };
@@ -69,17 +72,17 @@ export default function MenuManagerPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">Menu management</h1>
+        <h1 className="text-2xl font-extrabold">จัดการเมนู</h1>
         <button className="btn-primary" onClick={() => setEditing({ ...emptyProduct, categoryId: categories[0]?.id })}>
-          + Add item
+          + เพิ่มเมนู
         </button>
       </div>
 
       <div className="flex gap-2 overflow-x-auto">
-        <FilterChip active={tab === 'all'} onClick={() => setTab('all')}>All</FilterChip>
+        <FilterChip active={tab === 'all'} onClick={() => setTab('all')}>ทั้งหมด</FilterChip>
         {categories.map((c) => (
           <FilterChip key={c.id} active={tab === c.id} onClick={() => setTab(c.id)}>
-            {c.icon} {c.name}
+            {c.icon} {c.nameTh || c.name}
           </FilterChip>
         ))}
       </div>
@@ -88,11 +91,11 @@ export default function MenuManagerPage() {
         <table className="w-full text-sm">
           <thead className="bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-400">
             <tr>
-              <th className="px-4 py-2.5">Item</th>
-              <th className="px-4 py-2.5">Category</th>
-              <th className="px-4 py-2.5">Price</th>
-              <th className="px-4 py-2.5">Customise</th>
-              <th className="px-4 py-2.5">Status</th>
+              <th className="px-4 py-2.5">เมนู</th>
+              <th className="px-4 py-2.5">หมวดหมู่</th>
+              <th className="px-4 py-2.5">ราคา</th>
+              <th className="px-4 py-2.5">ตัวเลือก</th>
+              <th className="px-4 py-2.5">สถานะ</th>
               <th className="px-4 py-2.5"></th>
             </tr>
           </thead>
@@ -100,15 +103,15 @@ export default function MenuManagerPage() {
             {shown.map((p) => (
               <tr key={p.id} className={p.isActive ? '' : 'opacity-40'}>
                 <td className="px-4 py-2.5">
-                  <p className="font-semibold">{p.name}</p>
-                  <p className="text-xs text-stone-400">{p.nameTh}</p>
+                  <p className="font-semibold">{p.nameTh || p.name}</p>
+                  <p className="text-xs text-stone-400">{p.name}</p>
                 </td>
-                <td className="px-4 py-2.5 text-stone-500">{p.category?.name}</td>
+                <td className="px-4 py-2.5 text-stone-500">{p.category?.nameTh || p.category?.name}</td>
                 <td className="px-4 py-2.5 font-semibold">{money(p.price)}</td>
                 <td className="px-4 py-2.5 text-xs">
-                  {p.allowsSpice && <Tag>🌶️ spice</Tag>}
+                  {p.allowsSpice && <Tag>🌶️ เผ็ด</Tag>}
                   {p.allowsPlaRa && <Tag>ปลาร้า</Tag>}
-                  {p.allowsProtein && <Tag>protein</Tag>}
+                  {p.allowsProtein && <Tag>โปรตีน</Tag>}
                 </td>
                 <td className="px-4 py-2.5">
                   <button
@@ -117,15 +120,15 @@ export default function MenuManagerPage() {
                       p.isAvailable ? 'bg-lime-100 text-lime-700' : 'bg-chilli-100 text-chilli-700'
                     }`}
                   >
-                    {p.isAvailable ? 'Available' : 'Sold out'}
+                    {p.isAvailable ? 'พร้อมจำหน่าย' : 'ของหมด'}
                   </button>
                 </td>
                 <td className="px-4 py-2.5 text-right">
                   <button className="text-chilli-600 hover:underline" onClick={() => setEditing(p)}>
-                    Edit
+                    แก้ไข
                   </button>
                   <button className="ml-3 text-stone-400 hover:text-chilli-600" onClick={() => remove(p)}>
-                    Delete
+                    ลบ
                   </button>
                 </td>
               </tr>
@@ -151,44 +154,44 @@ function ProductForm({ initial, categories, onClose, onSave }) {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   return (
-    <Modal open onClose={onClose} title={form.id ? 'Edit item' : 'New item'} size="md">
+    <Modal open onClose={onClose} title={form.id ? 'แก้ไขเมนู' : 'เพิ่มเมนูใหม่'} size="md">
       <div className="grid gap-3 p-5 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className="label">Name (EN)</label>
-          <input className="input" value={form.name} onChange={(e) => set('name', e.target.value)} />
-        </div>
-        <div>
-          <label className="label">Name (TH)</label>
+          <label className="label">ชื่อ (ไทย)</label>
           <input className="input" value={form.nameTh || ''} onChange={(e) => set('nameTh', e.target.value)} />
         </div>
         <div>
-          <label className="label">Category</label>
+          <label className="label">ชื่อ (อังกฤษ)</label>
+          <input className="input" value={form.name} onChange={(e) => set('name', e.target.value)} />
+        </div>
+        <div>
+          <label className="label">หมวดหมู่</label>
           <select className="input" value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)}>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {c.nameTh || c.name}
               </option>
             ))}
           </select>
         </div>
         <div>
-          <label className="label">Price (฿)</label>
+          <label className="label">ราคาขาย (฿)</label>
           <input type="number" className="input" value={form.price} onChange={(e) => set('price', e.target.value)} />
         </div>
         <div>
-          <label className="label">Cost (฿)</label>
+          <label className="label">ต้นทุน (฿)</label>
           <input type="number" className="input" value={form.cost} onChange={(e) => set('cost', e.target.value)} />
         </div>
 
         <div className="sm:col-span-2 grid grid-cols-3 gap-2">
-          <Toggle label="Spicy options" checked={form.allowsSpice} onChange={(v) => set('allowsSpice', v)} />
-          <Toggle label="Pla Ra option" checked={form.allowsPlaRa} onChange={(v) => set('allowsPlaRa', v)} />
-          <Toggle label="Protein choice" checked={form.allowsProtein} onChange={(v) => set('allowsProtein', v)} />
+          <Toggle label="เลือกระดับเผ็ด" checked={form.allowsSpice} onChange={(v) => set('allowsSpice', v)} />
+          <Toggle label="เพิ่มปลาร้า" checked={form.allowsPlaRa} onChange={(v) => set('allowsPlaRa', v)} />
+          <Toggle label="เลือกโปรตีน" checked={form.allowsProtein} onChange={(v) => set('allowsProtein', v)} />
         </div>
 
         {form.allowsSpice && (
           <div className="sm:col-span-2">
-            <label className="label">Default spice</label>
+            <label className="label">ระดับเผ็ดเริ่มต้น</label>
             <select className="input" value={form.defaultSpice} onChange={(e) => set('defaultSpice', e.target.value)}>
               {SPICE_LEVELS.map((s) => (
                 <option key={s.key} value={s.key}>
@@ -200,16 +203,16 @@ function ProductForm({ initial, categories, onClose, onSave }) {
         )}
 
         <div className="sm:col-span-2">
-          <Toggle label="Track inventory" checked={form.trackInventory} onChange={(v) => set('trackInventory', v)} />
+          <Toggle label="ติดตามสต็อก" checked={form.trackInventory} onChange={(v) => set('trackInventory', v)} />
         </div>
         {form.trackInventory && (
           <>
             <div>
-              <label className="label">Stock qty</label>
+              <label className="label">จำนวนคงเหลือ</label>
               <input type="number" className="input" value={form.stockQty} onChange={(e) => set('stockQty', e.target.value)} />
             </div>
             <div>
-              <label className="label">Reorder level</label>
+              <label className="label">จุดสั่งซื้อ</label>
               <input type="number" className="input" value={form.reorderLevel} onChange={(e) => set('reorderLevel', e.target.value)} />
             </div>
           </>
@@ -217,10 +220,14 @@ function ProductForm({ initial, categories, onClose, onSave }) {
       </div>
       <div className="flex gap-2 border-t border-stone-200 p-4">
         <button className="btn-ghost flex-1" onClick={onClose}>
-          Cancel
+          ยกเลิก
         </button>
-        <button className="btn-primary flex-1" onClick={() => onSave(form)} disabled={!form.name || !form.categoryId}>
-          Save
+        <button
+          className="btn-primary flex-1"
+          onClick={() => onSave(form)}
+          disabled={(!form.name && !form.nameTh) || !form.categoryId}
+        >
+          บันทึก
         </button>
       </div>
     </Modal>

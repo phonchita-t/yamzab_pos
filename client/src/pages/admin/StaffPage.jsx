@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api.js';
 import { dateShort } from '../../lib/format.js';
+import { roleLabel } from '../../lib/constants.js';
 import Modal from '../../components/Modal.jsx';
 
 const empty = { username: '', fullName: '', email: '', password: '', role: 'CASHIER' };
@@ -28,7 +29,7 @@ export default function StaffPage() {
   };
 
   const deactivate = async (u) => {
-    if (!confirm(`Deactivate ${u.fullName}?`)) return;
+    if (!confirm(`ปิดการใช้งานบัญชีของ ${u.fullName} หรือไม่?`)) return;
     await api.del(`/users/${u.id}`);
     load();
   };
@@ -36,22 +37,22 @@ export default function StaffPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">Staff & access</h1>
+        <h1 className="text-2xl font-extrabold">พนักงานและสิทธิ์การใช้งาน</h1>
         <button className="btn-primary" onClick={() => setEditing({ ...empty })}>
-          + Add staff
+          + เพิ่มพนักงาน
         </button>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <RoleCard
-          title="Admin"
+          title="ผู้ดูแลระบบ"
           color="bg-chilli-600"
-          items={['Dashboard & analytics', 'Sales reports', 'Menu & pricing', 'Inventory', 'Members & loyalty', 'Staff management']}
+          items={['แดชบอร์ดและสถิติ', 'รายงานยอดขาย', 'เมนูและราคา', 'คลังสินค้า', 'สมาชิกและแต้มสะสม', 'จัดการพนักงาน']}
         />
         <RoleCard
-          title="Cashier"
+          title="แคชเชียร์"
           color="bg-lime-600"
-          items={['POS cashier screen', 'Order customisation', 'Payments (cash / QR / card)', 'Member lookup at checkout', 'Kitchen display']}
+          items={['หน้าจอขายหน้าร้าน', 'ปรับแต่งรายการอาหาร', 'รับชำระเงิน (เงินสด / QR / บัตร)', 'ค้นหาสมาชิกตอนคิดเงิน', 'จอแสดงผลครัว']}
         />
       </div>
 
@@ -59,11 +60,11 @@ export default function StaffPage() {
         <table className="w-full text-sm">
           <thead className="bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-400">
             <tr>
-              <th className="px-4 py-2.5">Name</th>
-              <th className="px-4 py-2.5">Username</th>
-              <th className="px-4 py-2.5">Role</th>
-              <th className="px-4 py-2.5">Last login</th>
-              <th className="px-4 py-2.5">Status</th>
+              <th className="px-4 py-2.5">ชื่อ</th>
+              <th className="px-4 py-2.5">ชื่อผู้ใช้</th>
+              <th className="px-4 py-2.5">บทบาท</th>
+              <th className="px-4 py-2.5">เข้าสู่ระบบล่าสุด</th>
+              <th className="px-4 py-2.5">สถานะ</th>
               <th className="px-4 py-2.5"></th>
             </tr>
           </thead>
@@ -78,20 +79,20 @@ export default function StaffPage() {
                       u.role === 'ADMIN' ? 'bg-chilli-600' : 'bg-lime-600'
                     }`}
                   >
-                    {u.role}
+                    {roleLabel(u.role)}
                   </span>
                 </td>
                 <td className="px-4 py-2.5 text-stone-500">
-                  {u.lastLoginAt ? dateShort(u.lastLoginAt) : 'never'}
+                  {u.lastLoginAt ? dateShort(u.lastLoginAt) : 'ยังไม่เคย'}
                 </td>
-                <td className="px-4 py-2.5">{u.isActive ? 'Active' : 'Inactive'}</td>
+                <td className="px-4 py-2.5">{u.isActive ? 'ใช้งาน' : 'ปิดใช้งาน'}</td>
                 <td className="px-4 py-2.5 text-right">
                   <button className="text-chilli-600 hover:underline" onClick={() => setEditing(u)}>
-                    Edit
+                    แก้ไข
                   </button>
                   {u.isActive && (
                     <button className="ml-3 text-stone-400 hover:text-chilli-600" onClick={() => deactivate(u)}>
-                      Deactivate
+                      ปิดการใช้งาน
                     </button>
                   )}
                 </td>
@@ -128,14 +129,14 @@ function StaffForm({ initial, onClose, onSave }) {
   const isNew = !form.id;
 
   return (
-    <Modal open onClose={onClose} title={isNew ? 'New staff member' : `Edit ${form.fullName}`} size="sm">
+    <Modal open onClose={onClose} title={isNew ? 'เพิ่มพนักงานใหม่' : `แก้ไข ${form.fullName}`} size="sm">
       <div className="space-y-3 p-5">
         <div>
-          <label className="label">Full name</label>
+          <label className="label">ชื่อ-นามสกุล</label>
           <input className="input" value={form.fullName} onChange={(e) => set('fullName', e.target.value)} />
         </div>
         <div>
-          <label className="label">Username</label>
+          <label className="label">ชื่อผู้ใช้</label>
           <input
             className="input disabled:bg-stone-100"
             value={form.username}
@@ -144,11 +145,11 @@ function StaffForm({ initial, onClose, onSave }) {
           />
         </div>
         <div>
-          <label className="label">Email (optional)</label>
+          <label className="label">อีเมล (ไม่บังคับ)</label>
           <input className="input" value={form.email || ''} onChange={(e) => set('email', e.target.value)} />
         </div>
         <div>
-          <label className="label">Role</label>
+          <label className="label">บทบาท</label>
           <div className="grid grid-cols-2 gap-2">
             {['CASHIER', 'ADMIN'].map((r) => (
               <button
@@ -158,13 +159,13 @@ function StaffForm({ initial, onClose, onSave }) {
                   form.role === r ? 'border-chilli-500 bg-chilli-50' : 'border-stone-200'
                 }`}
               >
-                {r}
+                {roleLabel(r)}
               </button>
             ))}
           </div>
         </div>
         <div>
-          <label className="label">{isNew ? 'Password' : 'Reset password (optional)'}</label>
+          <label className="label">{isNew ? 'รหัสผ่าน' : 'ตั้งรหัสผ่านใหม่ (ไม่บังคับ)'}</label>
           <input
             type="password"
             className="input"
@@ -175,20 +176,20 @@ function StaffForm({ initial, onClose, onSave }) {
         {!isNew && (
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={form.isActive} onChange={(e) => set('isActive', e.target.checked)} />
-            Active
+            เปิดใช้งาน
           </label>
         )}
       </div>
       <div className="flex gap-2 border-t border-stone-200 p-4">
         <button className="btn-ghost flex-1" onClick={onClose}>
-          Cancel
+          ยกเลิก
         </button>
         <button
           className="btn-primary flex-1"
           disabled={!form.fullName || !form.username || (isNew && !form.password)}
           onClick={() => onSave(form)}
         >
-          Save
+          บันทึก
         </button>
       </div>
     </Modal>

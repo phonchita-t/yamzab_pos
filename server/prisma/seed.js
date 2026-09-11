@@ -11,12 +11,12 @@ async function main() {
   await prisma.user.upsert({
     where: { username: 'admin' },
     update: {},
-    create: { username: 'admin', fullName: 'Somchai (Owner)', role: 'ADMIN', passwordHash, email: 'admin@yamzabb.local' },
+    create: { username: 'admin', fullName: 'สมชาย (เจ้าของร้าน)', role: 'ADMIN', passwordHash, email: 'admin@yamzabb.local' },
   });
   await prisma.user.upsert({
     where: { username: 'cashier' },
     update: {},
-    create: { username: 'cashier', fullName: 'Nok (Cashier)', role: 'CASHIER', passwordHash },
+    create: { username: 'cashier', fullName: 'นก (แคชเชียร์)', role: 'CASHIER', passwordHash },
   });
 
   /* --------------------------- Membership tiers ------------------------- */
@@ -53,37 +53,45 @@ async function main() {
   }
 
   /* --------------------------- Option groups --------------------------- */
-  const proteinGroup = await prisma.optionGroup.create({
-    data: {
-      name: 'Protein / Seafood', nameTh: 'เลือกโปรตีน', minSelect: 1, maxSelect: 1, isRequired: true, sortOrder: 0,
-      options: {
-        create: [
-          { name: 'Minced pork', nameTh: 'หมูสับ', priceDelta: 0, sortOrder: 0 },
-          { name: 'Sliced chicken', nameTh: 'ไก่ฉีก', priceDelta: 0, sortOrder: 1 },
-          { name: 'Shrimp', nameTh: 'กุ้ง', priceDelta: 30, sortOrder: 2 },
-          { name: 'Squid', nameTh: 'ปลาหมึก', priceDelta: 30, sortOrder: 3 },
-          { name: 'Mixed seafood', nameTh: 'ทะเลรวม', priceDelta: 50, sortOrder: 4 },
-          { name: 'Crispy pork', nameTh: 'หมูกรอบ', priceDelta: 20, sortOrder: 5 },
-        ],
-      },
-    },
-    include: { options: true },
-  });
-  const addonGroup = await prisma.optionGroup.create({
-    data: {
-      name: 'Extra toppings', nameTh: 'เพิ่มท็อปปิ้ง', minSelect: 0, maxSelect: 5, isRequired: false, sortOrder: 1,
-      options: {
-        create: [
-          { name: 'Salted egg', nameTh: 'ไข่เค็ม', priceDelta: 15 },
-          { name: 'Century egg', nameTh: 'ไข่เยี่ยวม้า', priceDelta: 15 },
-          { name: 'Extra peanuts', nameTh: 'ถั่วเพิ่ม', priceDelta: 10 },
-          { name: 'Crispy shallots', nameTh: 'หอมเจียว', priceDelta: 10 },
-          { name: 'Vermicelli', nameTh: 'วุ้นเส้น', priceDelta: 20 },
-        ],
-      },
-    },
-    include: { options: true },
-  });
+  // Neither OptionGroup nor Option has a natural unique key, so upsert
+  // manually by name to keep re-running this script idempotent.
+  async function upsertOptionGroup(fields, optionDefs) {
+    const existingGroup = await prisma.optionGroup.findFirst({ where: { name: fields.name } });
+    const group = existingGroup
+      ? await prisma.optionGroup.update({ where: { id: existingGroup.id }, data: fields })
+      : await prisma.optionGroup.create({ data: fields });
+    const options = [];
+    for (const o of optionDefs) {
+      const existing = await prisma.option.findFirst({ where: { optionGroupId: group.id, name: o.name } });
+      const option = existing
+        ? await prisma.option.update({ where: { id: existing.id }, data: o })
+        : await prisma.option.create({ data: { ...o, optionGroupId: group.id } });
+      options.push(option);
+    }
+    return { ...group, options };
+  }
+
+  const proteinGroup = await upsertOptionGroup(
+    { name: 'Protein / Seafood', nameTh: 'เลือกโปรตีน', minSelect: 1, maxSelect: 1, isRequired: true, sortOrder: 0 },
+    [
+      { name: 'Minced pork', nameTh: 'หมูสับ', priceDelta: 0, sortOrder: 0 },
+      { name: 'Sliced chicken', nameTh: 'ไก่ฉีก', priceDelta: 0, sortOrder: 1 },
+      { name: 'Shrimp', nameTh: 'กุ้ง', priceDelta: 30, sortOrder: 2 },
+      { name: 'Squid', nameTh: 'ปลาหมึก', priceDelta: 30, sortOrder: 3 },
+      { name: 'Mixed seafood', nameTh: 'ทะเลรวม', priceDelta: 50, sortOrder: 4 },
+      { name: 'Crispy pork', nameTh: 'หมูกรอบ', priceDelta: 20, sortOrder: 5 },
+    ],
+  );
+  const addonGroup = await upsertOptionGroup(
+    { name: 'Extra toppings', nameTh: 'เพิ่มท็อปปิ้ง', minSelect: 0, maxSelect: 5, isRequired: false, sortOrder: 1 },
+    [
+      { name: 'Salted egg', nameTh: 'ไข่เค็ม', priceDelta: 15 },
+      { name: 'Century egg', nameTh: 'ไข่เยี่ยวม้า', priceDelta: 15 },
+      { name: 'Extra peanuts', nameTh: 'ถั่วเพิ่ม', priceDelta: 10 },
+      { name: 'Crispy shallots', nameTh: 'หอมเจียว', priceDelta: 10 },
+      { name: 'Vermicelli', nameTh: 'วุ้นเส้น', priceDelta: 20 },
+    ],
+  );
 
   /* ------------------------------ Products ----------------------------- */
   const products = [
@@ -123,17 +131,23 @@ async function main() {
 
   for (const [i, p] of products.entries()) {
     const { slug, groups, ...data } = p;
-    const created = await prisma.product.create({
-      data: {
-        ...data,
-        categoryId: catMap[slug].id,
-        defaultSpice: data.allowsSpice ? 'MEDIUM' : 'NONE',
-        sortOrder: i,
-      },
+    const sku = `SEED-${String(i).padStart(3, '0')}`;
+    const fields = {
+      ...data,
+      categoryId: catMap[slug].id,
+      defaultSpice: data.allowsSpice ? 'MEDIUM' : 'NONE',
+      sortOrder: i,
+    };
+    const created = await prisma.product.upsert({
+      where: { sku },
+      update: fields,
+      create: { ...fields, sku },
     });
     for (const g of groups || []) {
-      await prisma.productOptionGroup.create({
-        data: { productId: created.id, optionGroupId: g.id },
+      await prisma.productOptionGroup.upsert({
+        where: { productId_optionGroupId: { productId: created.id, optionGroupId: g.id } },
+        update: {},
+        create: { productId: created.id, optionGroupId: g.id },
       });
     }
   }
@@ -143,7 +157,7 @@ async function main() {
     where: { phone: '0812345678' },
     update: {},
     create: {
-      phone: '0812345678', fullName: 'Ploy Rakdee', tierId: memberTier.id,
+      phone: '0812345678', fullName: 'พลอย รักดี', tierId: memberTier.id,
       pointsBalance: 120, lifetimePoints: 320, visitCount: 8, lifetimeSpend: 3200,
     },
   });
@@ -151,7 +165,7 @@ async function main() {
     where: { phone: '0899999999' },
     update: {},
     create: {
-      phone: '0899999999', fullName: 'Krit Zabb-lover', tierId: goldTier.id,
+      phone: '0899999999', fullName: 'กฤต แซ่บเลิฟเวอร์', tierId: goldTier.id,
       pointsBalance: 640, lifetimePoints: 2450, visitCount: 41, lifetimeSpend: 24500,
     },
   });

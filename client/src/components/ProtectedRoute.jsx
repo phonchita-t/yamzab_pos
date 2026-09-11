@@ -8,7 +8,7 @@ export default function ProtectedRoute({ children, roles }) {
   if (loading) {
     return (
       <div className="grid h-full place-items-center text-stone-400">
-        <span className="animate-pulse-slow text-2xl">🌶️ loading…</span>
+        <span className="animate-pulse-slow text-2xl">🌶️ กำลังโหลด…</span>
       </div>
     );
   }

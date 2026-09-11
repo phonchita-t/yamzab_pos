@@ -26,7 +26,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/tiers', tierRoutes);
 
-app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
+app.use((_req, res) => res.status(404).json({ error: 'ไม่พบเส้นทางที่ร้องขอ' }));
 app.use(errorHandler);
 
 app.listen(config.port, () => {

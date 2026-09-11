@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
-import { money } from '../lib/format.js';
+import { money, nameOf } from '../lib/format.js';
 import SpiceMeter from '../components/SpiceMeter.jsx';
 import CustomizeModal from '../components/pos/CustomizeModal.jsx';
 import CheckoutModal from '../components/pos/CheckoutModal.jsx';
@@ -54,30 +54,30 @@ export default function POSPage() {
       <div className="flex min-h-0 flex-1 flex-col">
         <header className="flex items-center gap-3 border-b border-stone-200 bg-white px-4 py-3">
           <span className="text-xl">🌶️🥗</span>
-          <h1 className="text-lg font-extrabold">Yam Zabb POS</h1>
+          <h1 className="text-lg font-extrabold">ยำแซ่บ POS</h1>
           <input
             className="input ml-2 max-w-xs"
-            placeholder="Search menu…"
+            placeholder="ค้นหาเมนู…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <div className="ml-auto flex items-center gap-2 text-sm">
-            <Link to="/kds" className="btn-ghost !py-2">🍳 Kitchen</Link>
-            {user?.role === 'ADMIN' && <Link to="/admin" className="btn-ghost !py-2">Admin</Link>}
+            <Link to="/kds" className="btn-ghost !py-2">🍳 จอครัว</Link>
+            {user?.role === 'ADMIN' && <Link to="/admin" className="btn-ghost !py-2">ผู้ดูแลระบบ</Link>}
             <span className="hidden text-stone-500 sm:inline">{user?.fullName}</span>
-            <button onClick={logout} className="btn-ghost !py-2">Sign out</button>
+            <button onClick={logout} className="btn-ghost !py-2">ออกจากระบบ</button>
           </div>
         </header>
 
         {/* category tabs */}
         <div className="flex gap-2 overflow-x-auto border-b border-stone-200 bg-white px-4 py-2">
-          <CatTab active={activeCat === 'all'} onClick={() => setActiveCat('all')} label="All" icon="🍽️" />
+          <CatTab active={activeCat === 'all'} onClick={() => setActiveCat('all')} label="ทั้งหมด" icon="🍽️" />
           {categories.map((c) => (
             <CatTab
               key={c.id}
               active={activeCat === c.id}
               onClick={() => setActiveCat(c.id)}
-              label={c.name}
+              label={nameOf(c)}
               icon={c.icon}
               color={c.color}
             />
@@ -87,7 +87,7 @@ export default function POSPage() {
         {/* grid */}
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           {loading ? (
-            <p className="text-stone-400">Loading menu…</p>
+            <p className="text-stone-400">กำลังโหลดเมนู…</p>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
               {filtered.map((p) => (
@@ -107,18 +107,20 @@ export default function POSPage() {
                       <span>{p.category?.slug === 'drinks' ? '🥤' : '🥗'}</span>
                     )}
                   </div>
-                  <span className="line-clamp-2 text-sm font-semibold leading-tight">{p.name}</span>
-                  {p.nameTh && <span className="text-xs text-stone-400">{p.nameTh}</span>}
+                  <span className="line-clamp-2 text-sm font-semibold leading-snug">{nameOf(p)}</span>
+                  {p.nameTh && p.name && p.nameTh !== p.name && (
+                    <span className="text-xs text-stone-400">{p.name}</span>
+                  )}
                   <div className="mt-auto flex items-center justify-between pt-2">
                     <span className="font-bold text-chilli-700">{money(p.price)}</span>
                     {p.allowsSpice && <SpiceMeter level={p.defaultSpice} />}
                   </div>
                   {!p.isAvailable && (
-                    <span className="mt-1 text-xs font-bold uppercase text-chilli-600">Sold out</span>
+                    <span className="mt-1 text-xs font-bold uppercase text-chilli-600">ของหมด</span>
                   )}
                 </button>
               ))}
-              {filtered.length === 0 && <p className="text-stone-400">No items match.</p>}
+              {filtered.length === 0 && <p className="text-stone-400">ไม่พบเมนูที่ตรงกับคำค้นหา</p>}
             </div>
           )}
         </div>
@@ -128,7 +130,7 @@ export default function POSPage() {
       <aside className="flex w-full shrink-0 flex-col border-t border-stone-200 bg-white lg:w-96 lg:border-l lg:border-t-0">
         <div className="border-b border-stone-200 px-4 py-3">
           <h2 className="text-base font-bold">
-            Current order{' '}
+            ออเดอร์ปัจจุบัน{' '}
             <span className="ml-1 rounded-full bg-chilli-100 px-2 py-0.5 text-xs font-bold text-chilli-700">
               {cart.itemCount}
             </span>
@@ -138,17 +140,17 @@ export default function POSPage() {
         <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
           {cart.lines.length === 0 && (
             <p className="mt-10 text-center text-sm text-stone-400">
-              Tap a dish to start the order 🌶️
+              แตะเมนูเพื่อเริ่มออเดอร์ 🌶️
             </p>
           )}
           {cart.lines.map((l) => (
             <div key={l.uid} className="mb-2 rounded-xl border border-stone-200 p-2.5">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-sm font-semibold leading-tight">{l.product.name}</p>
+                  <p className="text-sm font-semibold leading-snug">{nameOf(l.product)}</p>
                   <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
                     {l.product.allowsSpice && <SpiceMeter level={l.spiceLevel} />}
-                    {l.plaRa && <span className="rounded bg-fishsauce/15 px-1.5 text-fishsauce">+ปลาร้า Pla Ra</span>}
+                    {l.plaRa && <span className="rounded bg-fishsauce/15 px-1.5 text-fishsauce">+ ปลาร้า</span>}
                     {l.options.map((o) => (
                       <span key={o.id} className="rounded bg-stone-100 px-1.5">{o.name}</span>
                     ))}
@@ -159,7 +161,7 @@ export default function POSPage() {
                   onClick={() => setCustomizing({ product: l.product, line: l })}
                   className="text-xs font-semibold text-chilli-600 hover:underline"
                 >
-                  Edit
+                  แก้ไข
                 </button>
               </div>
               <div className="mt-2 flex items-center justify-between">
@@ -176,19 +178,19 @@ export default function POSPage() {
 
         <div className="space-y-2 border-t border-stone-200 p-4">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-stone-500">Subtotal</span>
+            <span className="text-stone-500">ยอดรวม</span>
             <span className="font-semibold">{money(cart.subtotal)}</span>
           </div>
           <div className="flex gap-2">
             <button onClick={cart.clear} disabled={!cart.lines.length} className="btn-ghost flex-1">
-              Clear
+              ล้าง
             </button>
             <button
               onClick={() => setCheckout(true)}
               disabled={!cart.lines.length}
               className="btn-primary flex-[2] text-base"
             >
-              Charge {money(cart.subtotal)}
+              คิดเงิน {money(cart.subtotal)}
             </button>
           </div>
         </div>

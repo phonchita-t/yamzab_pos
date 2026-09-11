@@ -7,13 +7,13 @@ import { config } from '../config.js';
 export function authenticate(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-  if (!token) return res.status(401).json({ error: 'Missing authentication token' });
+  if (!token) return res.status(401).json({ error: 'ไม่พบโทเคนการยืนยันตัวตน' });
 
   try {
     req.user = jwt.verify(token, config.jwtSecret);
     return next();
   } catch {
-    return res.status(401).json({ error: 'Invalid or expired token' });
+    return res.status(401).json({ error: 'โทเคนไม่ถูกต้องหรือหมดอายุ' });
   }
 }
 
@@ -23,9 +23,9 @@ export function authenticate(req, res, next) {
  */
 export function requireRole(...roles) {
   return (req, res, next) => {
-    if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+    if (!req.user) return res.status(401).json({ error: 'ยังไม่ได้เข้าสู่ระบบ' });
     if (req.user.role === 'ADMIN' || roles.includes(req.user.role)) return next();
-    return res.status(403).json({ error: 'Insufficient permissions for this action' });
+    return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ดำเนินการนี้' });
   };
 }
 

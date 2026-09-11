@@ -2,12 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { relativeMinutes } from '../lib/format.js';
-import { spiceMeta } from '../lib/constants.js';
+import { spiceMeta, orderTypeLabel } from '../lib/constants.js';
 
 const COLUMNS = [
-  { status: 'PENDING', title: 'Pending', accent: 'border-amber-400' },
-  { status: 'PREPARING', title: 'Preparing', accent: 'border-sky-400' },
-  { status: 'COMPLETED', title: 'Completed', accent: 'border-lime-400' },
+  { status: 'PENDING', title: 'รอดำเนินการ', accent: 'border-amber-400' },
+  { status: 'PREPARING', title: 'กำลังปรุง', accent: 'border-sky-400' },
+  { status: 'COMPLETED', title: 'เสร็จสิ้น', accent: 'border-lime-400' },
 ];
 
 const NEXT = { PENDING: 'PREPARING', PREPARING: 'COMPLETED' };
@@ -44,10 +44,10 @@ export default function KDSPage() {
     <div className="flex h-full flex-col bg-charcoal text-white">
       <header className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
         <span className="text-xl">🍳</span>
-        <h1 className="text-lg font-extrabold">Kitchen Display · จอครัว</h1>
-        <span className="ml-2 text-xs text-white/40">auto-refresh 5s · {tick >= 0 && ''}</span>
+        <h1 className="text-lg font-extrabold">จอแสดงผลครัว · KDS</h1>
+        <span className="ml-2 text-xs text-white/40">รีเฟรชอัตโนมัติทุก 5 วินาที{tick >= 0 && ''}</span>
         <Link to="/pos" className="ml-auto rounded-lg bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20">
-          ← Back to POS
+          ← กลับหน้าขาย
         </Link>
       </header>
 
@@ -70,8 +70,8 @@ export default function KDSPage() {
                       <span className="text-xs text-stone-400">{relativeMinutes(o.placedAt)}</span>
                     </div>
                     <p className="text-xs text-stone-500">
-                      {o.orderType?.replace('_', ' ')}
-                      {o.tableLabel ? ` · Table ${o.tableLabel}` : ''}
+                      {orderTypeLabel(o.orderType)}
+                      {o.tableLabel ? ` · โต๊ะ ${o.tableLabel}` : ''}
                       {o.customer?.fullName ? ` · ${o.customer.fullName}` : ''}
                     </p>
 
@@ -91,7 +91,7 @@ export default function KDSPage() {
                             <div className="flex flex-wrap gap-1 text-xs text-stone-500">
                               {it.plaRa && (
                                 <span className="rounded bg-fishsauce/15 px-1.5 font-semibold text-fishsauce">
-                                  +ปลาร้า Pla Ra
+                                  + ปลาร้า
                                 </span>
                               )}
                               {it.options?.map((op) => (
@@ -106,19 +106,19 @@ export default function KDSPage() {
                       })}
                     </ul>
 
-                    {o.note && <p className="mt-2 text-xs italic text-stone-500">Order note: {o.note}</p>}
+                    {o.note && <p className="mt-2 text-xs italic text-stone-500">หมายเหตุออเดอร์: {o.note}</p>}
 
                     {NEXT[o.status] && (
                       <button
                         onClick={() => advance(o)}
                         className="btn-primary mt-3 w-full !py-1.5 text-sm"
                       >
-                        {o.status === 'PENDING' ? 'Start preparing →' : 'Mark completed ✓'}
+                        {o.status === 'PENDING' ? 'เริ่มปรุง →' : 'ปรุงเสร็จแล้ว ✓'}
                       </button>
                     )}
                   </article>
                 ))}
-                {list.length === 0 && <p className="px-2 py-6 text-center text-sm text-white/30">Empty</p>}
+                {list.length === 0 && <p className="px-2 py-6 text-center text-sm text-white/30">ไม่มีออเดอร์</p>}
               </div>
             </div>
           );

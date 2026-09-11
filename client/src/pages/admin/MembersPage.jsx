@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api.js';
 import { money, dateShort } from '../../lib/format.js';
+import { loyaltyTypeLabel } from '../../lib/constants.js';
 import Modal from '../../components/Modal.jsx';
 
 export default function MembersPage() {
@@ -21,7 +22,7 @@ export default function MembersPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">Members & loyalty</h1>
+        <h1 className="text-2xl font-extrabold">สมาชิกและแต้มสะสม</h1>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -31,7 +32,7 @@ export default function MembersPage() {
             className="rounded-full px-3 py-1 text-xs font-bold text-white"
             style={{ backgroundColor: t.color }}
           >
-            {t.name} · {t.minPoints}+ pts · {Number(t.discountPercent)}% off · ×{Number(t.pointsMultiplier)} pts
+            {t.name} · {t.minPoints}+ แต้ม · ลด {Number(t.discountPercent)}% · รับแต้ม ×{Number(t.pointsMultiplier)}
           </span>
         ))}
       </div>
@@ -39,13 +40,13 @@ export default function MembersPage() {
       <div className="flex gap-2">
         <input
           className="input max-w-sm"
-          placeholder="Search by phone or name"
+          placeholder="ค้นหาด้วยเบอร์โทรหรือชื่อ"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && search()}
         />
         <button className="btn-primary" onClick={() => search()}>
-          Search
+          ค้นหา
         </button>
       </div>
 
@@ -53,12 +54,12 @@ export default function MembersPage() {
         <table className="w-full text-sm">
           <thead className="bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-400">
             <tr>
-              <th className="px-4 py-2.5">Member</th>
-              <th className="px-4 py-2.5">Phone</th>
-              <th className="px-4 py-2.5">Tier</th>
-              <th className="px-4 py-2.5">Points</th>
-              <th className="px-4 py-2.5">Visits</th>
-              <th className="px-4 py-2.5">Lifetime spend</th>
+              <th className="px-4 py-2.5">สมาชิก</th>
+              <th className="px-4 py-2.5">เบอร์โทร</th>
+              <th className="px-4 py-2.5">ระดับ</th>
+              <th className="px-4 py-2.5">แต้มสะสม</th>
+              <th className="px-4 py-2.5">จำนวนครั้ง</th>
+              <th className="px-4 py-2.5">ยอดใช้จ่ายสะสม</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -86,7 +87,7 @@ export default function MembersPage() {
             {list.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-6 text-center text-stone-400">
-                  No members found.
+                  ไม่พบสมาชิก
                 </td>
               </tr>
             )}
@@ -137,48 +138,48 @@ function MemberDetail({ member, onClose, onChanged }) {
             <div className="mt-2 flex gap-2 text-center text-xs">
               <div className="flex-1 rounded-lg bg-stone-100 py-2">
                 <p className="text-lg font-extrabold">{member.pointsBalance}</p>
-                <p className="text-stone-500">points</p>
+                <p className="text-stone-500">แต้มคงเหลือ</p>
               </div>
               <div className="flex-1 rounded-lg bg-stone-100 py-2">
                 <p className="text-lg font-extrabold">{member.lifetimePoints}</p>
-                <p className="text-stone-500">lifetime pts</p>
+                <p className="text-stone-500">แต้มสะสมทั้งหมด</p>
               </div>
               <div className="flex-1 rounded-lg bg-stone-100 py-2">
                 <p className="text-lg font-extrabold" style={{ color: member.tier?.color }}>
                   {member.tier?.name || 'Member'}
                 </p>
-                <p className="text-stone-500">tier</p>
+                <p className="text-stone-500">ระดับ</p>
               </div>
             </div>
           </div>
 
           <div className="card p-4">
-            <p className="label">Manual point adjustment</p>
+            <p className="label">ปรับแต้มด้วยตนเอง</p>
             <div className="flex gap-2">
               <input
                 type="number"
                 className="input"
-                placeholder="+ / − points"
+                placeholder="+ / − แต้ม"
                 value={points}
                 onChange={(e) => setPoints(e.target.value)}
               />
             </div>
             <input
               className="input mt-2"
-              placeholder="Reason (required)"
+              placeholder="เหตุผล (จำเป็น)"
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
             {error && <p className="mt-1 text-sm text-chilli-700">{error}</p>}
             <button className="btn-primary mt-2 w-full" disabled={!points || !note} onClick={adjust}>
-              Apply adjustment
+              บันทึกการปรับแต้ม
             </button>
           </div>
         </div>
 
         <div className="space-y-4">
           <div>
-            <p className="label">Recent orders</p>
+            <p className="label">ออเดอร์ล่าสุด</p>
             <ul className="space-y-1.5 text-sm">
               {(member.orders || []).map((o) => (
                 <li key={o.id} className="flex justify-between rounded-lg bg-stone-50 px-3 py-1.5">
@@ -186,16 +187,16 @@ function MemberDetail({ member, onClose, onChanged }) {
                   <span className="font-semibold">{money(o.total)}</span>
                 </li>
               ))}
-              {!member.orders?.length && <li className="text-stone-400">No orders yet</li>}
+              {!member.orders?.length && <li className="text-stone-400">ยังไม่มีออเดอร์</li>}
             </ul>
           </div>
           <div>
-            <p className="label">Loyalty ledger</p>
+            <p className="label">ประวัติแต้มสะสม</p>
             <ul className="space-y-1.5 text-sm">
               {(member.loyaltyTransactions || []).map((t) => (
                 <li key={t.id} className="flex justify-between rounded-lg bg-stone-50 px-3 py-1.5">
                   <span className="text-stone-500">
-                    {t.type} · {dateShort(t.createdAt)}
+                    {loyaltyTypeLabel(t.type)} · {dateShort(t.createdAt)}
                   </span>
                   <span className={`font-semibold ${t.points >= 0 ? 'text-lime-600' : 'text-chilli-600'}`}>
                     {t.points >= 0 ? '+' : ''}
@@ -203,7 +204,7 @@ function MemberDetail({ member, onClose, onChanged }) {
                   </span>
                 </li>
               ))}
-              {!member.loyaltyTransactions?.length && <li className="text-stone-400">No activity</li>}
+              {!member.loyaltyTransactions?.length && <li className="text-stone-400">ไม่มีความเคลื่อนไหว</li>}
             </ul>
           </div>
         </div>

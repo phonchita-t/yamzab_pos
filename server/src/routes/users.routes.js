@@ -70,7 +70,7 @@ router.delete(
   '/:id',
   asyncHandler(async (req, res) => {
     if (req.params.id === req.user.id) {
-      return res.status(400).json({ error: 'You cannot deactivate your own account' });
+      return res.status(400).json({ error: 'ไม่สามารถปิดการใช้งานบัญชีของตนเองได้' });
     }
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
     res.status(204).end();

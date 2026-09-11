@@ -18,12 +18,12 @@ router.get(
   '/lookup',
   asyncHandler(async (req, res) => {
     const phone = String(req.query.phone || '').trim();
-    if (!phone) return res.status(400).json({ error: 'phone query param required' });
+    if (!phone) return res.status(400).json({ error: 'กรุณาระบุเบอร์โทรศัพท์' });
     const customer = await prisma.customer.findUnique({
       where: { phone },
       include: customerInclude,
     });
-    if (!customer) return res.status(404).json({ error: 'No member with that phone number' });
+    if (!customer) return res.status(404).json({ error: 'ไม่พบสมาชิกที่ใช้เบอร์โทรนี้' });
     res.json(customer);
   }),
 );

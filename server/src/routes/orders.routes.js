@@ -71,13 +71,13 @@ router.post(
     // Build priced line items
     const lines = body.items.map((item) => {
       const product = productMap.get(item.productId);
-      if (!product) throw Object.assign(new Error(`Unknown product ${item.productId}`), { status: 422 });
+      if (!product) throw Object.assign(new Error(`ไม่พบสินค้า ${item.productId}`), { status: 422 });
       if (!product.isAvailable || !product.isActive) {
-        throw Object.assign(new Error(`"${product.name}" is not available`), { status: 409 });
+        throw Object.assign(new Error(`"${product.nameTh || product.name}" ไม่พร้อมจำหน่าย`), { status: 409 });
       }
       const selectedOptions = item.optionIds.map((id) => {
         const opt = optionMap.get(id);
-        if (!opt) throw Object.assign(new Error(`Unknown option ${id}`), { status: 422 });
+        if (!opt) throw Object.assign(new Error(`ไม่พบตัวเลือก ${id}`), { status: 422 });
         return opt;
       });
       const optionsTotal = round2(selectedOptions.reduce((s, o) => s + Number(o.priceDelta), 0));
@@ -94,7 +94,7 @@ router.post(
     });
 
     if (customer && body.pointsToRedeem > customer.pointsBalance) {
-      return res.status(409).json({ error: 'Member does not have enough points to redeem' });
+      return res.status(409).json({ error: 'สมาชิกมีแต้มสะสมไม่เพียงพอสำหรับการแลก' });
     }
 
     const tierDiscountPct = customer?.tier ? Number(customer.tier.discountPercent) : 0;
@@ -112,7 +112,7 @@ router.post(
 
     const paidTotal = round2(body.payments.reduce((s, p) => s + p.amount, 0));
     if (paidTotal + 0.01 < bill.total) {
-      return res.status(422).json({ error: `Payments (${paidTotal}) are less than the total due (${bill.total})` });
+      return res.status(422).json({ error: `ยอดชำระ (${paidTotal}) น้อยกว่ายอดที่ต้องชำระ (${bill.total})` });
     }
 
     const order = await prisma.$transaction(async (tx) => {
@@ -137,7 +137,7 @@ router.post(
           items: {
             create: lines.map((l) => ({
               productId: l.product.id,
-              nameSnapshot: l.product.name,
+              nameSnapshot: l.product.nameTh || l.product.name,
               unitPrice: l.unitPrice,
               quantity: l.quantity,
               spiceLevel: l.item.spiceLevel || l.product.defaultSpice,
@@ -148,7 +148,7 @@ router.post(
               options: {
                 create: l.selectedOptions.map((o) => ({
                   optionId: o.id,
-                  nameSnapshot: o.name,
+                  nameSnapshot: o.nameTh || o.name,
                   priceDelta: o.priceDelta,
                 })),
               },
@@ -193,7 +193,7 @@ router.post(
             data: {
               customerId: customer.id, orderId: created.id, type: 'REDEEM',
               points: -bill.pointsRedeemed, balanceAfter: balance,
-              note: `Redeemed on order #${created.orderNumber}`, createdById: req.user.id,
+              note: `ใช้แต้มในออเดอร์ #${created.orderNumber}`, createdById: req.user.id,
             },
           });
         }
@@ -203,7 +203,7 @@ router.post(
             data: {
               customerId: customer.id, orderId: created.id, type: 'EARN',
               points: bill.pointsEarned, balanceAfter: balance,
-              note: `Earned on order #${created.orderNumber}`, createdById: req.user.id,
+              note: `สะสมแต้มจากออเดอร์ #${created.orderNumber}`, createdById: req.user.id,
             },
           });
         }

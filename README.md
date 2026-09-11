@@ -92,8 +92,11 @@ cp server/.env.example server/.env
 #   edit DATABASE_URL / JWT_SECRET if needed
 #   default: postgresql://postgres:postgres@localhost:5432/yam_zabb_pos
 
-# 4. (optional) client env — only needed if the API is not on localhost:4000
+# 4. client env — API base URL (if not localhost:4000) + direct PromptPay QR
 cp client/.env.example client/.env
+#   VITE_PROMPTPAY_ID   the shop's receiving mobile no. or 13-digit National/Tax ID
+#   VITE_MERCHANT_NAME  name shown above the checkout QR
+#   (leave VITE_PROMPTPAY_ID blank to disable the dynamic QR)
 
 # 5. Create the schema and load demo data
 npm run db:migrate        # prisma migrate dev  (creates tables)
@@ -180,5 +183,23 @@ the schema.
 | `npm run db:seed` | reseed demo data |
 | `npm run db:reset` | drop, re-migrate, re-seed |
 | `npm run build` | production build of the client |
+| `npm run test:e2e` | Playwright end-to-end tests (see below) |
 
+---
 
+## 6. QA: end-to-end tests
+
+The full POS/KDS/admin flow is covered by a [Playwright](https://playwright.dev)
+suite that drives the real client + API + database — see
+[`e2e/README.md`](e2e/README.md) for the full list of covered flows and caveats.
+
+```bash
+docker compose up -d
+npm run prisma:deploy --workspace server && npm run db:seed
+npx playwright install chromium   # one-time
+npm run test:e2e
+```
+
+`npm run test:e2e:ui` opens Playwright's interactive UI mode; `npm run test:e2e:report`
+reopens the last HTML report. Tests also run in CI on every push/PR against a
+throwaway PostgreSQL service container (`.github/workflows/e2e.yml`).

@@ -4,7 +4,7 @@ export default function SpiceMeter({ level, size = 'sm', showLabel = false }) {
   const meta = spiceMeta(level);
   const dim = size === 'lg' ? 'text-xl' : size === 'md' ? 'text-base' : 'text-sm';
   return (
-    <span className="inline-flex items-center gap-1" title={`${meta.label} (${meta.th})`}>
+    <span className="inline-flex items-center gap-1" title={meta.label}>
       <span className={dim} aria-hidden>
         {meta.peppers === 0 ? '🚫' : '🌶️'.repeat(meta.peppers)}
       </span>

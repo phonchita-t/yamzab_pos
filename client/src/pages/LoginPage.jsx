@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const QUICK = [
-  { role: 'Admin', username: 'admin', desc: 'Dashboard, reports, menu, inventory, staff' },
-  { role: 'Cashier', username: 'cashier', desc: 'POS, orders, payments, kitchen display' },
+  { role: 'ผู้ดูแลระบบ', username: 'admin', desc: 'แดชบอร์ด รายงาน เมนู สต็อก พนักงาน' },
+  { role: 'แคชเชียร์', username: 'cashier', desc: 'หน้าขาย ออเดอร์ ชำระเงิน จอครัว' },
 ];
 
 export default function LoginPage() {
@@ -37,13 +37,13 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center text-white">
           <div className="text-5xl">🌶️🥗</div>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Yam Zabb POS</h1>
-          <p className="text-sm text-chilli-100">แซ่บเวอร์ — Spicy Salad Point of Sale</p>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight">ยำแซ่บ POS</h1>
+          <p className="text-sm text-chilli-100">แซ่บเวอร์ — ระบบขายหน้าร้านอาหารส้มตำ</p>
         </div>
 
         <form onSubmit={submit} className="card space-y-4 p-6">
           <div>
-            <label className="label">Username</label>
+            <label className="label">ชื่อผู้ใช้</label>
             <input
               className="input"
               autoFocus
@@ -53,7 +53,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="label">Password</label>
+            <label className="label">รหัสผ่าน</label>
             <input
               type="password"
               className="input"
@@ -68,12 +68,12 @@ export default function LoginPage() {
           )}
 
           <button className="btn-primary w-full" disabled={busy}>
-            {busy ? 'Signing in…' : 'Sign in'}
+            {busy ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}
           </button>
 
           <div className="border-t border-stone-200 pt-3">
             <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-stone-400">
-              Demo accounts (password: password123)
+              บัญชีทดลอง (รหัสผ่าน: password123)
             </p>
             <div className="grid gap-2">
               {QUICK.map((q) => (

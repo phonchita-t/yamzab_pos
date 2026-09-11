@@ -33,7 +33,7 @@ async function request(path, { method = 'GET', body, params } = {}) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(data.error || `Request failed (${res.status})`);
+    const err = new Error(data.error || `คำขอไม่สำเร็จ (${res.status})`);
     err.status = res.status;
     err.details = data.details;
     throw err;

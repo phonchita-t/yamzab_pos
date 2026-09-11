@@ -24,3 +24,9 @@ Thumbs.db
 .idea/
 .vscode/
 .fleet/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+/blob-report/

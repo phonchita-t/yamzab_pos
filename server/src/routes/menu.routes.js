@@ -70,7 +70,7 @@ router.get(
         ...(includeInactive === 'true' ? {} : { isActive: true }),
       },
       include: {
-        category: { select: { name: true, slug: true, color: true } },
+        category: { select: { name: true, nameTh: true, slug: true, color: true } },
         optionGroups: { include: { optionGroup: { include: { options: true } } } },
       },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
@@ -152,7 +152,7 @@ router.get(
       where: { trackInventory: true, isActive: true },
       select: {
         id: true, name: true, nameTh: true, stockQty: true, reorderLevel: true,
-        category: { select: { name: true } },
+        category: { select: { name: true, nameTh: true } },
       },
       orderBy: { stockQty: 'asc' },
     });

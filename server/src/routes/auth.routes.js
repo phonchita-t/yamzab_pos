@@ -19,7 +19,7 @@ router.post(
     const { username, password } = req.body;
     const user = await prisma.user.findUnique({ where: { username } });
     if (!user || !user.isActive || !(await bcrypt.compare(password, user.passwordHash))) {
-      return res.status(401).json({ error: 'Invalid username or password' });
+      return res.status(401).json({ error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
     }
     await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
     const token = signToken(user);
@@ -38,7 +38,7 @@ router.get(
       where: { id: req.user.id },
       select: { id: true, username: true, fullName: true, role: true, isActive: true },
     });
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.status(404).json({ error: 'ไม่พบผู้ใช้งาน' });
     return res.json({ user });
   }),
 );

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Modal from '../Modal.jsx';
 import { useCart } from '../../context/CartContext.jsx';
 import { SPICE_LEVELS } from '../../lib/constants.js';
-import { money } from '../../lib/format.js';
+import { money, nameOf } from '../../lib/format.js';
 
 /**
  * Add a new customised line, or edit an existing one (`line` prop).
@@ -54,7 +54,7 @@ export default function CustomizeModal({ product, line, onClose }) {
       spiceLevel: product.allowsSpice ? spiceLevel : 'NONE',
       plaRa: product.allowsPlaRa ? plaRa : false,
       note,
-      options: chosenOptions.map((o) => ({ id: o.id, name: o.name, priceDelta: Number(o.priceDelta) })),
+      options: chosenOptions.map((o) => ({ id: o.id, name: nameOf(o), priceDelta: Number(o.priceDelta) })),
     };
     if (editing) cart.updateLine(line.uid, payload);
     else cart.addLine({ product, quantity: 1, ...payload });
@@ -62,14 +62,16 @@ export default function CustomizeModal({ product, line, onClose }) {
   };
 
   return (
-    <Modal open onClose={onClose} title={product.name} size="md">
+    <Modal open onClose={onClose} title={nameOf(product)} size="md">
       <div className="space-y-5 p-5">
-        {product.nameTh && <p className="-mt-2 text-sm text-stone-400">{product.nameTh}</p>}
+        {product.nameTh && product.name && product.nameTh !== product.name && (
+          <p className="-mt-2 text-sm text-stone-400">{product.name}</p>
+        )}
 
         {/* Spice */}
         {product.allowsSpice && (
           <section>
-            <p className="label">Spicy level · ระดับความเผ็ด</p>
+            <p className="label">ระดับความเผ็ด</p>
             <div className="grid grid-cols-3 gap-2">
               {SPICE_LEVELS.map((s) => (
                 <button
@@ -91,8 +93,8 @@ export default function CustomizeModal({ product, line, onClose }) {
         {product.allowsPlaRa && (
           <section className="flex items-center justify-between rounded-xl bg-fishsauce/10 px-4 py-3">
             <div>
-              <p className="font-semibold text-fishsauce">Fermented fish sauce · ปลาร้า</p>
-              <p className="text-xs text-stone-500">Add Pla Ra to this dish</p>
+              <p className="font-semibold text-fishsauce">ปลาร้า</p>
+              <p className="text-xs text-stone-500">เพิ่มปลาร้าในเมนูนี้</p>
             </div>
             <button
               onClick={() => setPlaRa((v) => !v)}
@@ -107,9 +109,9 @@ export default function CustomizeModal({ product, line, onClose }) {
         {optionGroups.map((g) => (
           <section key={g.id}>
             <p className="label">
-              {g.name} {g.nameTh && <span className="text-stone-400">· {g.nameTh}</span>}
+              {nameOf(g)}
               {g.isRequired && <span className="ml-1 text-chilli-600">*</span>}
-              {g.maxSelect > 1 && <span className="ml-1 normal-case text-stone-400">(up to {g.maxSelect})</span>}
+              {g.maxSelect > 1 && <span className="ml-1 normal-case text-stone-400">(เลือกได้สูงสุด {g.maxSelect})</span>}
             </p>
             <div className="grid grid-cols-2 gap-2">
               {g.options
@@ -124,7 +126,7 @@ export default function CustomizeModal({ product, line, onClose }) {
                         on ? 'border-lime-500 bg-lime-50' : 'border-stone-200'
                       }`}
                     >
-                      <span className="font-medium">{o.name}</span>
+                      <span className="font-medium">{nameOf(o)}</span>
                       {Number(o.priceDelta) > 0 && (
                         <span className="text-xs text-stone-500">+{money(o.priceDelta)}</span>
                       )}
@@ -137,10 +139,10 @@ export default function CustomizeModal({ product, line, onClose }) {
 
         {/* Note */}
         <section>
-          <p className="label">Kitchen note</p>
+          <p className="label">หมายเหตุถึงครัว</p>
           <input
             className="input"
-            placeholder="e.g. no peanuts, extra lime, separate sauce"
+            placeholder="เช่น ไม่ใส่ถั่ว เพิ่มมะนาว แยกน้ำจิ้ม"
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
@@ -150,7 +152,7 @@ export default function CustomizeModal({ product, line, onClose }) {
       <div className="flex items-center justify-between gap-3 border-t border-stone-200 p-4">
         <span className="text-lg font-extrabold">{money(unitPreview)}</span>
         <button className="btn-primary flex-1" disabled={requiredMissing} onClick={submit}>
-          {editing ? 'Update item' : 'Add to order'}
+          {editing ? 'อัปเดตรายการ' : 'เพิ่มลงออเดอร์'}
         </button>
       </div>
     </Modal>

@@ -51,7 +51,7 @@ router.get(
       }),
       prisma.product.findMany({
         where: { trackInventory: true, isActive: true },
-        select: { id: true, name: true, stockQty: true, reorderLevel: true },
+        select: { id: true, name: true, nameTh: true, stockQty: true, reorderLevel: true },
       }),
       prisma.customer.count({ where: { isActive: true } }),
     ]);
