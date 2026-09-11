@@ -254,16 +254,56 @@ docker run -d --name sonarqube -p 9000:9000 sonarqube:lts-community
 # http://localhost:9000, default login admin/admin (you'll be asked to change it)
 ```
 
-**Bugs SonarQube found in this codebase** (real findings from validation,
-not yet fixed — flagging here rather than fixing unprompted):
+**Bugs SonarQube found in this codebase** (from the validation run — the two
+real ones are already fixed; noting them here for context):
 
-- `client/src/components/pos/MemberPanel.jsx:25` — `else setError(err.message), setStatus('idle');`
-  uses the comma operator instead of two statements. It happens to work, but
-  reads like a missing `;` / braces and is one accidental edit away from a bug.
-- `server/src/prisma.js:4` — the `log:` ternary returns the same array on both
-  branches (`... ? ['warn','error'] : ['warn','error']`), so the condition is
-  dead code.
+- ~~`client/src/components/pos/MemberPanel.jsx` used the comma operator
+  (`else setError(err.message), setStatus('idle');`) instead of two
+  statements~~ — fixed.
+- ~~`server/src/prisma.js` had a `log:` ternary whose branches returned the
+  same value~~ — fixed.
 - Two `BLOCKER`-severity hits on the date-bucketing loop in
   `server/src/routes/reports.routes.js` (`for (let d = ...; d <= end; d.setDate(...))`)
   are false positives — SonarQube's loop-counter rule doesn't know `Date.setDate`
   mutates in place — safe to mark "won't fix" in SonarQube rather than changing the code.
+
+---
+
+## 7. Deploying the client to GitHub Pages
+
+A GitHub Actions workflow ([`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml))
+builds `client/` and publishes it to `https://phonchita-t.github.io/yamzab_pos/`
+on every push to `main` that touches `client/`.
+
+**⚠️ Static hosting only.** GitHub Pages serves static files — it cannot run
+the Express API or PostgreSQL. This deploy is the React SPA alone, with no
+backend behind it: the UI loads and renders fully, but anything that calls
+the API (login, the menu grid, checkout, reports, …) will fail with a visible
+error, same as any other network failure the app already handles. To make a
+fully working deployment, host `server/` somewhere reachable (Render, Railway,
+Fly.io, a VPS, …) and set `VITE_API_BASE_URL` in the workflow's build step to
+that URL before building the client.
+
+**One-time setup** (can't be done from here — needs repo admin access):
+in the repo's **Settings → Pages**, set **Build and deployment → Source** to
+**GitHub Actions**. After that, every push to `main` touching `client/`
+deploys automatically; you can also trigger it manually from the *Actions*
+tab (`Deploy client to GitHub Pages` → *Run workflow*).
+
+Implementation notes:
+- `client/vite.config.js` sets `base: '/yamzab_pos/'` only when the workflow
+  sets `GITHUB_PAGES=true` during build — local dev (`npm run dev`) is
+  unaffected and still serves from `/`.
+- `main.jsx`'s `<BrowserRouter basename={import.meta.env.BASE_URL}>` picks up
+  that same base automatically, so all the app's routes resolve under
+  `/yamzab_pos/` once deployed.
+- The build step copies `dist/index.html` to `dist/404.html` so direct links
+  into the SPA (e.g. a bookmark to `/yamzab_pos/pos`) don't 404 — GitHub Pages
+  has no server-side rewrites, so this is the standard way to make
+  client-side routing survive a hard refresh.
+- `client/public/.nojekyll` stops GitHub Pages from running the output
+  through Jekyll (which would otherwise ignore any `_`-prefixed asset).
+
+This was validated locally end-to-end (`GITHUB_PAGES=true` build, served at
+the `/yamzab_pos/` path, loaded and routed correctly in a real browser via
+Playwright, login fails gracefully with no backend present as expected).
