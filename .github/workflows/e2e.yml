@@ -46,6 +46,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Prisma client
+        # Unlike `prisma migrate dev`, `migrate deploy` (used below) never runs
+        # `generate` itself, and the postinstall hook can't find the schema inside
+        # this npm workspace layout — so it must be generated explicitly here.
+        run: npm run prisma:generate --workspace server
+
       - name: Apply database migrations & seed demo data
         run: |
           npm run prisma:deploy --workspace server

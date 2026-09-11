@@ -21,8 +21,12 @@ export default function MemberPanel({ customer, onSelect }) {
       onSelect(found);
       setStatus('idle');
     } catch (err) {
-      if (err.status === 404) setStatus('notfound');
-      else setError(err.message), setStatus('idle');
+      if (err.status === 404) {
+        setStatus('notfound');
+      } else {
+        setError(err.message);
+        setStatus('idle');
+      }
     }
   };
 

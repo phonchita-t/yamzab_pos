@@ -15,7 +15,16 @@ export default defineConfig({
   workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'html',
+  // junit's output must live outside playwright-report/: the html reporter
+  // clears that whole folder when it writes its own report, which raced with
+  // (and deleted) junit.xml when both pointed at the same directory.
+  reporter: process.env.CI
+    ? [
+        ...(process.env.GITHUB_ACTIONS ? [['github']] : []),
+        ['junit', { outputFile: 'test-results/junit.xml' }],
+        ['html', { open: 'never' }],
+      ]
+    : 'html',
   timeout: 30_000,
   expect: { timeout: 8_000 },
 

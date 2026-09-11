@@ -203,3 +203,67 @@ npm run test:e2e
 `npm run test:e2e:ui` opens Playwright's interactive UI mode; `npm run test:e2e:report`
 reopens the last HTML report. Tests also run in CI on every push/PR against a
 throwaway PostgreSQL service container (`.github/workflows/e2e.yml`).
+
+### Jenkins
+
+A [`Jenkinsfile`](Jenkinsfile) at the repo root runs the same build-and-test
+pipeline (install → generate Prisma client → migrate + seed → build client →
+Playwright E2E) inside a throwaway PostgreSQL + Node containers per build. It
+is CI only — no deploy stage. Requirements on the Jenkins agent:
+
+- Docker available to the agent (the pipeline shells out to `docker` directly
+  and uses `docker.image(...).withRun()` / `.inside()`, so Jenkins itself can
+  run in a container too, as long as it has Docker CLI + socket access).
+- Plugins: Pipeline (`workflow-aggregator`), Docker Pipeline (`docker-workflow`),
+  Git, JUnit, Timestamper, AnsiColor, and (optional, for the in-Jenkins HTML
+  report view) HTML Publisher.
+
+Point a Pipeline job at this repo with "Pipeline script from SCM" → the
+`Jenkinsfile` picks up from there. This pipeline was validated end-to-end
+against a real Jenkins controller (all 21 Playwright tests green, JUnit trend
+and HTML report both published).
+
+### Static analysis: SonarQube
+
+The pipeline's last two stages run a [SonarQube](https://www.sonarsource.com/products/sonarqube/)
+scan and wait on its quality gate — configuration is in [`sonar-project.properties`](sonar-project.properties)
+(scans `client/src` + `server/src`, excludes `node_modules`, build output and
+migrations). This was also validated end-to-end against a real self-hosted
+SonarQube (Community Edition): the scan completed, the quality gate came back
+`OK`, and it genuinely caught 2 real bugs in the current codebase worth fixing —
+see below.
+
+**One-time Jenkins setup** (Manage Jenkins > System):
+
+1. Install the **SonarQube Scanner** plugin.
+2. Under *SonarQube servers*, add a server named exactly `SonarQube` with your
+   server's URL and a **Secret text** credential holding a user token
+   (SonarQube → My Account → Security → Generate Token).
+3. In SonarQube, add a webhook (Administration → Webhooks) pointing at
+   `<your-jenkins-url>/sonarqube-webhook/` — without this the `Quality Gate`
+   stage will just time out after 5 minutes rather than fail fast.
+
+The scanner CLI itself isn't pre-installed anywhere — the pipeline downloads
+it fresh into the ephemeral build container each run (see the `SonarQube analysis`
+stage), so no Jenkins-side tool configuration is needed beyond the server entry.
+
+Don't have a SonarQube server yet? For local/dev use:
+
+```bash
+docker run -d --name sonarqube -p 9000:9000 sonarqube:lts-community
+# http://localhost:9000, default login admin/admin (you'll be asked to change it)
+```
+
+**Bugs SonarQube found in this codebase** (real findings from validation,
+not yet fixed — flagging here rather than fixing unprompted):
+
+- `client/src/components/pos/MemberPanel.jsx:25` — `else setError(err.message), setStatus('idle');`
+  uses the comma operator instead of two statements. It happens to work, but
+  reads like a missing `;` / braces and is one accidental edit away from a bug.
+- `server/src/prisma.js:4` — the `log:` ternary returns the same array on both
+  branches (`... ? ['warn','error'] : ['warn','error']`), so the condition is
+  dead code.
+- Two `BLOCKER`-severity hits on the date-bucketing loop in
+  `server/src/routes/reports.routes.js` (`for (let d = ...; d <= end; d.setDate(...))`)
+  are false positives — SonarQube's loop-counter rule doesn't know `Date.setDate`
+  mutates in place — safe to mark "won't fix" in SonarQube rather than changing the code.
