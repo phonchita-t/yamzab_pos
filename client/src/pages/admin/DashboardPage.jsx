@@ -13,7 +13,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { api } from '../../lib/api.js';
+import { db } from '../../lib/store.js';
 import { money } from '../../lib/format.js';
 import { paymentLabel } from '../../lib/constants.js';
 
@@ -31,7 +31,11 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setData(null);
-    api.get('/reports/dashboard', { period }).then(setData).catch((e) => setError(e.message));
+    try {
+      setData(db.getDashboardReport(period));
+    } catch (e) {
+      setError(e.message);
+    }
   }, [period]);
 
   if (error) return <p className="text-chilli-700">{error}</p>;

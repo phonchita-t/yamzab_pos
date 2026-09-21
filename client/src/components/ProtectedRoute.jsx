@@ -2,16 +2,8 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function ProtectedRoute({ children, roles }) {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
-
-  if (loading) {
-    return (
-      <div className="grid h-full place-items-center text-stone-400">
-        <span className="animate-pulse-slow text-2xl">🌶️ กำลังโหลด…</span>
-      </div>
-    );
-  }
 
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
 

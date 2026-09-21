@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import Modal from '../Modal.jsx';
-import { api } from '../../lib/api.js';
+import { db } from '../../lib/store.js';
+import { round2, buildBill } from '../../lib/pricing.js';
 import { useCart } from '../../context/CartContext.jsx';
 import { money } from '../../lib/format.js';
 import { PAYMENT_METHODS, paymentLabel } from '../../lib/constants.js';
 import MemberPanel from './MemberPanel.jsx';
 import PromptPayQR from './PromptPayQR.jsx';
-
-const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 // Common Thai banknotes for the quick-cash shortcuts.
 const CASH_QUICK = [100, 500, 1000];
@@ -35,33 +34,29 @@ export default function CheckoutModal({ onClose }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    api.get('/customers/config/loyalty').then(setConfig).catch(() => {});
+    setConfig(db.getLoyaltyConfig());
   }, []);
 
-  /* ----- bill preview (mirrors server buildBill) ----- */
+  /* ----- bill preview — same buildBill() the checkout commit uses ----- */
   const bill = useMemo(() => {
-    const subtotal = round2(cart.subtotal);
-    const tierPct = customer?.tier ? Number(customer.tier.discountPercent) : 0;
-    const tierDiscount = round2((subtotal * tierPct) / 100);
-    const discountAmount = round2(Math.min(Number(manualDiscount || 0) + tierDiscount, subtotal));
-    const afterDiscount = round2(subtotal - discountAmount);
-
-    let redeemed = 0;
-    let pointsValue = 0;
-    if (customer && config) {
-      const cpp = Number(config.currencyPerPoint);
-      const maxVal = round2((afterDiscount * Number(config.maxRedeemPercent)) / 100);
-      redeemed = Math.min(Number(pointsToRedeem || 0), customer.pointsBalance);
-      if (redeemed < Number(config.minRedeemPoints)) redeemed = 0;
-      pointsValue = Math.min(round2(redeemed * cpp), maxVal);
-      redeemed = Math.floor(pointsValue / cpp);
-      pointsValue = round2(redeemed * cpp);
+    if (!config) {
+      const subtotal = round2(cart.subtotal);
+      return { subtotal, tierDiscount: 0, discountAmount: 0, pointsRedeemed: 0, pointsValue: 0, total: subtotal, pointsEarned: 0 };
     }
-    const total = round2(afterDiscount - pointsValue);
-    const mult = customer?.tier ? Number(customer.tier.pointsMultiplier) : 1;
-    const earned = config ? Math.floor(total * Number(config.pointsPerCurrency) * mult) : 0;
-    return { subtotal, tierDiscount, discountAmount, redeemed, pointsValue, total, earned };
-  }, [cart.subtotal, customer, config, manualDiscount, pointsToRedeem]);
+    const items = cart.lines.map((l) => ({
+      unitPrice: Number(l.product.price),
+      optionsTotal: round2(l.options.reduce((s, o) => s + Number(o.priceDelta), 0)),
+      quantity: l.quantity,
+    }));
+    const clampedRedeem = customer ? Math.min(Number(pointsToRedeem || 0), customer.pointsBalance) : 0;
+    return buildBill(items, {
+      manualDiscount: Number(manualDiscount || 0),
+      tierDiscountPct: customer?.tier ? Number(customer.tier.discountPercent) : 0,
+      pointsToRedeem: clampedRedeem,
+      loyaltyConfig: config,
+      pointsMultiplier: customer?.tier ? Number(customer.tier.pointsMultiplier) : 1,
+    });
+  }, [cart.lines, cart.subtotal, customer, config, manualDiscount, pointsToRedeem]);
 
   /* ----- single-tender maths ----- */
   const cashNum = round2(Number(cashReceived || 0));
@@ -95,7 +90,7 @@ export default function CheckoutModal({ onClose }) {
     bill.total > 0 &&
     (splitMode ? remaining <= 0.01 : singleOk);
 
-  const confirm = async () => {
+  const confirm = () => {
     setError('');
     setBusy(true);
     try {
@@ -117,11 +112,11 @@ export default function CheckoutModal({ onClose }) {
             },
           ];
 
-      const res = await api.post('/orders/checkout', {
+      const res = db.checkout({
         items: cart.toCheckoutItems(),
         customerId: customer?.id ?? null,
         manualDiscount: Number(manualDiscount || 0),
-        pointsToRedeem: bill.redeemed,
+        pointsToRedeem: bill.pointsRedeemed,
         payments: outgoing,
       });
       setLastChange(effectiveChange);
@@ -151,7 +146,7 @@ export default function CheckoutModal({ onClose }) {
           {o.pointsEarned > 0 && (
             <p className="text-sm text-stone-500">ได้รับแต้มสะสม +{o.pointsEarned} แต้ม</p>
           )}
-          <p className="text-xs text-stone-400">ส่งเข้าจอครัวแล้ว · สถานะ รอดำเนินการ</p>
+          <p className="text-xs text-stone-400">บันทึกการขายเรียบร้อยแล้ว</p>
           <button className="btn-primary w-full" onClick={onClose}>ออเดอร์ใหม่</button>
         </div>
       </Modal>
@@ -214,15 +209,15 @@ export default function CheckoutModal({ onClose }) {
             )}
             {Number(manualDiscount) > 0 && <Row label="ส่วนลดกำหนดเอง" value={`− ${money(manualDiscount)}`} accent />}
             {bill.pointsValue > 0 && (
-              <Row label={`ใช้แต้มสะสม (${bill.redeemed} แต้ม)`} value={`− ${money(bill.pointsValue)}`} accent />
+              <Row label={`ใช้แต้มสะสม (${bill.pointsRedeemed} แต้ม)`} value={`− ${money(bill.pointsValue)}`} accent />
             )}
             <div className="my-1 border-t border-dashed border-stone-200" />
             <div className="flex items-baseline justify-between">
               <span className="font-bold text-charcoal">ยอดรวมทั้งสิ้น</span>
               <span className="text-2xl font-extrabold tabular-nums text-charcoal">{money(bill.total)}</span>
             </div>
-            {bill.earned > 0 && (
-              <p className="pt-1 text-xs text-lime-600">สมาชิกจะได้รับแต้มสะสม +{bill.earned} แต้ม</p>
+            {bill.pointsEarned > 0 && (
+              <p className="pt-1 text-xs text-lime-600">สมาชิกจะได้รับแต้มสะสม +{bill.pointsEarned} แต้ม</p>
             )}
           </section>
 

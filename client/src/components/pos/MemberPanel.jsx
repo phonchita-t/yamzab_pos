@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from '../../lib/api.js';
+import { db } from '../../lib/store.js';
 import { money } from '../../lib/format.js';
 
 /**
@@ -11,13 +11,13 @@ export default function MemberPanel({ customer, onSelect }) {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
 
-  const search = async () => {
+  const search = () => {
     const q = phone.trim();
     if (!q) return;
     setError('');
     setStatus('searching');
     try {
-      const found = await api.get('/customers/lookup', { phone: q });
+      const found = db.lookupCustomerByPhone(q);
       onSelect(found);
       setStatus('idle');
     } catch (err) {
@@ -30,10 +30,10 @@ export default function MemberPanel({ customer, onSelect }) {
     }
   };
 
-  const register = async () => {
+  const register = () => {
     setError('');
     try {
-      const created = await api.post('/customers', { phone: phone.trim(), fullName: name.trim() || null });
+      const created = db.createCustomer({ phone: phone.trim(), fullName: name.trim() || null });
       onSelect(created);
       setStatus('idle');
     } catch (err) {

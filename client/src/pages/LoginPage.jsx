@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 
 const QUICK = [
   { role: 'ผู้ดูแลระบบ', username: 'admin', desc: 'แดชบอร์ด รายงาน เมนู สต็อก พนักงาน' },
-  { role: 'แคชเชียร์', username: 'cashier', desc: 'หน้าขาย ออเดอร์ ชำระเงิน จอครัว' },
+  { role: 'แคชเชียร์', username: 'cashier', desc: 'หน้าขาย ออเดอร์ ชำระเงิน' },
 ];
 
 export default function LoginPage() {

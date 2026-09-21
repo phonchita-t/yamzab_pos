@@ -5,7 +5,6 @@ import { CartProvider } from './context/CartContext.jsx';
 
 import LoginPage from './pages/LoginPage.jsx';
 import POSPage from './pages/POSPage.jsx';
-import KDSPage from './pages/KDSPage.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
 import DashboardPage from './pages/admin/DashboardPage.jsx';
 import MenuManagerPage from './pages/admin/MenuManagerPage.jsx';
@@ -32,15 +31,6 @@ export default function App() {
             <CartProvider>
               <POSPage />
             </CartProvider>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/kds"
-        element={
-          <ProtectedRoute roles={['CASHIER', 'ADMIN']}>
-            <KDSPage />
           </ProtectedRoute>
         }
       />

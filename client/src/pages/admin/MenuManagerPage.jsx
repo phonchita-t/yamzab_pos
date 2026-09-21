@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../../lib/api.js';
+import { db } from '../../lib/store.js';
 import { money } from '../../lib/format.js';
 import Modal from '../../components/Modal.jsx';
 import { SPICE_LEVELS } from '../../lib/constants.js';
@@ -26,20 +26,16 @@ export default function MenuManagerPage() {
   const [editing, setEditing] = useState(null);
   const [tab, setTab] = useState('all');
 
-  const load = () =>
-    Promise.all([
-      api.get('/menu/categories'),
-      api.get('/menu/products', { includeInactive: true }),
-    ]).then(([c, p]) => {
-      setCategories(c);
-      setProducts(p);
-    });
+  const load = () => {
+    setCategories(db.getCategories());
+    setProducts(db.getProducts({ includeInactive: true }));
+  };
 
   useEffect(() => {
     load();
   }, []);
 
-  const save = async (form) => {
+  const save = (form) => {
     const payload = {
       ...form,
       // Thai name is primary; fall back to it when no English name is entered.
@@ -50,20 +46,20 @@ export default function MenuManagerPage() {
       stockQty: Number(form.stockQty),
       reorderLevel: Number(form.reorderLevel),
     };
-    if (form.id) await api.patch(`/menu/products/${form.id}`, payload);
-    else await api.post('/menu/products', payload);
+    if (form.id) db.updateProduct(form.id, payload);
+    else db.createProduct(payload);
     setEditing(null);
     load();
   };
 
-  const remove = async (p) => {
+  const remove = (p) => {
     if (!confirm(`ปิดการใช้งาน "${p.nameTh || p.name}" หรือไม่?`)) return;
-    await api.del(`/menu/products/${p.id}`);
+    db.deactivateProduct(p.id);
     load();
   };
 
-  const toggleAvail = async (p) => {
-    await api.patch(`/menu/products/${p.id}/availability`, { isAvailable: !p.isAvailable });
+  const toggleAvail = (p) => {
+    db.setProductAvailability(p.id, !p.isAvailable);
     load();
   };
 

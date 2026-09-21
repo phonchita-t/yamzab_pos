@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../lib/api.js';
+import { db } from '../lib/store.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import { money, nameOf } from '../lib/format.js';
@@ -22,12 +22,9 @@ export default function POSPage() {
   const [checkout, setCheckout] = useState(false);
 
   useEffect(() => {
-    Promise.all([api.get('/menu/categories'), api.get('/menu/products')])
-      .then(([cats, prods]) => {
-        setCategories(cats.filter((c) => c.isActive));
-        setProducts(prods);
-      })
-      .finally(() => setLoading(false));
+    setCategories(db.getCategories().filter((c) => c.isActive));
+    setProducts(db.getProducts());
+    setLoading(false);
   }, []);
 
   const filtered = useMemo(() => {
@@ -62,7 +59,6 @@ export default function POSPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
           <div className="ml-auto flex items-center gap-2 text-sm">
-            <Link to="/kds" className="btn-ghost !py-2">🍳 จอครัว</Link>
             {user?.role === 'ADMIN' && <Link to="/admin" className="btn-ghost !py-2">ผู้ดูแลระบบ</Link>}
             <span className="hidden text-stone-500 sm:inline">{user?.fullName}</span>
             <button onClick={logout} className="btn-ghost !py-2">ออกจากระบบ</button>

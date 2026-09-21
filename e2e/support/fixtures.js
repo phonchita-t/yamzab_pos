@@ -1,8 +1,9 @@
 import { test as base, expect } from '@playwright/test';
 
 /**
- * Demo accounts / data created by `npm run db:seed` (server/prisma/seed.js).
- * Keep in sync with that file if the demo dataset changes.
+ * Demo accounts / data seeded into localStorage on first load
+ * (client/src/lib/store.js). Keep in sync with that file if the demo
+ * dataset changes.
  */
 export const DEMO = {
   admin: { username: 'admin', password: 'password123' },

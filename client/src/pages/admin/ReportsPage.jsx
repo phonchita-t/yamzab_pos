@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../../lib/api.js';
+import { db } from '../../lib/store.js';
 import { money } from '../../lib/format.js';
 
 const GROUPS = [
@@ -14,11 +14,11 @@ export default function ReportsPage() {
   const [bestSellers, setBestSellers] = useState([]);
 
   useEffect(() => {
-    api.get('/reports/sales', { groupBy, period: 'month' }).then(setRows);
+    setRows(db.getSalesReport({ groupBy, period: 'month' }));
   }, [groupBy]);
 
   useEffect(() => {
-    api.get('/reports/dashboard', { period: 'month' }).then((d) => setBestSellers(d.bestSellers));
+    setBestSellers(db.getDashboardReport('month').bestSellers);
   }, []);
 
   const fmtBucket = (b) => {

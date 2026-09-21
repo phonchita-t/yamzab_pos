@@ -11,27 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: yam_zabb_pos
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/yam_zabb_pos?schema=public
-      JWT_SECRET: ci-test-secret-not-for-production
-      JWT_EXPIRES_IN: 12h
-      PORT: 4000
-      CLIENT_ORIGIN: http://localhost:5173
       VITE_PROMPTPAY_ID: "0955555555"
       VITE_MERCHANT_NAME: "ร้าน ยำแซ่บ (CI)"
 
@@ -45,17 +25,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Generate Prisma client
-        # Unlike `prisma migrate dev`, `migrate deploy` (used below) never runs
-        # `generate` itself, and the postinstall hook can't find the schema inside
-        # this npm workspace layout — so it must be generated explicitly here.
-        run: npm run prisma:generate --workspace server
-
-      - name: Apply database migrations & seed demo data
-        run: |
-          npm run prisma:deploy --workspace server
-          npm run db:seed
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium

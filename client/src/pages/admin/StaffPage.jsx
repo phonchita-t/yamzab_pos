@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../../lib/api.js';
+import { db } from '../../lib/store.js';
 import { dateShort } from '../../lib/format.js';
 import { roleLabel } from '../../lib/constants.js';
 import Modal from '../../components/Modal.jsx';
@@ -10,28 +10,36 @@ export default function StaffPage() {
   const [users, setUsers] = useState([]);
   const [editing, setEditing] = useState(null);
 
-  const load = () => api.get('/users').then(setUsers);
+  const load = () => setUsers(db.getUsers());
   useEffect(() => {
     load();
   }, []);
 
-  const save = async (form) => {
-    if (form.id) {
-      const patch = { fullName: form.fullName, role: form.role, isActive: form.isActive };
-      if (form.password) patch.password = form.password;
-      if (form.email) patch.email = form.email;
-      await api.patch(`/users/${form.id}`, patch);
-    } else {
-      await api.post('/users', form);
+  const save = (form) => {
+    try {
+      if (form.id) {
+        const patch = { fullName: form.fullName, role: form.role, isActive: form.isActive };
+        if (form.password) patch.password = form.password;
+        if (form.email) patch.email = form.email;
+        db.updateUser(form.id, patch);
+      } else {
+        db.createUser(form);
+      }
+      setEditing(null);
+      load();
+    } catch (e) {
+      alert(e.message);
     }
-    setEditing(null);
-    load();
   };
 
-  const deactivate = async (u) => {
+  const deactivate = (u) => {
     if (!confirm(`ปิดการใช้งานบัญชีของ ${u.fullName} หรือไม่?`)) return;
-    await api.del(`/users/${u.id}`);
-    load();
+    try {
+      db.deactivateUser(u.id);
+      load();
+    } catch (e) {
+      alert(e.message);
+    }
   };
 
   return (
@@ -52,7 +60,7 @@ export default function StaffPage() {
         <RoleCard
           title="แคชเชียร์"
           color="bg-lime-600"
-          items={['หน้าจอขายหน้าร้าน', 'ปรับแต่งรายการอาหาร', 'รับชำระเงิน (เงินสด / QR / บัตร)', 'ค้นหาสมาชิกตอนคิดเงิน', 'จอแสดงผลครัว']}
+          items={['หน้าจอขายหน้าร้าน', 'ปรับแต่งรายการอาหาร', 'รับชำระเงิน (เงินสด / QR / บัตร)', 'ค้นหาสมาชิกตอนคิดเงิน']}
         />
       </div>
 

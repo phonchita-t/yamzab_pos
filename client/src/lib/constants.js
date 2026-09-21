@@ -21,15 +21,6 @@ export const PAYMENT_METHODS = [
 export const paymentLabel = (key) =>
   PAYMENT_METHODS.find((m) => m.key === key)?.label || key;
 
-export const ORDER_STATUS = {
-  PENDING: { label: 'รอดำเนินการ', color: 'bg-amber-100 text-amber-800 ring-amber-200' },
-  PREPARING: { label: 'กำลังปรุง', color: 'bg-sky-100 text-sky-800 ring-sky-200' },
-  COMPLETED: { label: 'เสร็จสิ้น', color: 'bg-lime-100 text-lime-800 ring-lime-200' },
-  CANCELLED: { label: 'ยกเลิก', color: 'bg-stone-200 text-stone-600 ring-stone-300' },
-};
-
-export const orderStatusLabel = (key) => ORDER_STATUS[key]?.label || key;
-
 // Inventory stock-movement types
 export const MOVEMENT_TYPES = {
   PURCHASE: 'รับเข้า',

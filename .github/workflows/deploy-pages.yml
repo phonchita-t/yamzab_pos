@@ -33,8 +33,7 @@ jobs:
 
       - name: Build client
         # GITHUB_PAGES switches vite.config.js to the /yamzab_pos/ base path.
-        # No backend is deployed alongside this static build — see README.md's
-        # "Deploying the client to GitHub Pages" section for what that means.
+        # No backend to wire up — the app is fully client-side (localStorage).
         run: npm run build --workspace client
         env:
           GITHUB_PAGES: 'true'

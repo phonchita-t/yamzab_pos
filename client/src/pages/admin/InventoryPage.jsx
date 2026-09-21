@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../../lib/api.js';
+import { db } from '../../lib/store.js';
 import Modal from '../../components/Modal.jsx';
 import { MOVEMENT_TYPES } from '../../lib/constants.js';
 
@@ -7,7 +7,7 @@ export default function InventoryPage() {
   const [items, setItems] = useState([]);
   const [move, setMove] = useState(null);
 
-  const load = () => api.get('/menu/inventory').then(setItems);
+  const load = () => setItems(db.getInventory());
   useEffect(() => {
     load();
   }, []);
@@ -80,10 +80,10 @@ function MovementForm({ product, onClose, onDone }) {
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
 
-  const submit = async () => {
+  const submit = () => {
     setError('');
     try {
-      await api.post(`/menu/inventory/${product.id}/movement`, {
+      db.recordStockMovement(product.id, {
         type,
         quantity: Number(quantity),
         note: note || undefined,

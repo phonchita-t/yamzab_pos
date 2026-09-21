@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../../lib/api.js';
+import { db } from '../../lib/store.js';
 import { money, dateShort } from '../../lib/format.js';
 import { loyaltyTypeLabel } from '../../lib/constants.js';
 import Modal from '../../components/Modal.jsx';
@@ -10,14 +10,14 @@ export default function MembersPage() {
   const [selected, setSelected] = useState(null);
   const [tiers, setTiers] = useState([]);
 
-  const search = (query = q) => api.get('/customers', { q: query }).then(setList);
+  const search = (query = q) => setList(db.searchCustomers(query));
 
   useEffect(() => {
     search('');
-    api.get('/tiers').then(setTiers);
+    setTiers(db.getTiers());
   }, []);
 
-  const openDetail = (id) => api.get(`/customers/${id}`).then(setSelected);
+  const openDetail = (id) => setSelected(db.getCustomer(id));
 
   return (
     <div className="space-y-4">
@@ -114,13 +114,10 @@ function MemberDetail({ member, onClose, onChanged }) {
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
 
-  const adjust = async () => {
+  const adjust = () => {
     setError('');
     try {
-      const updated = await api.post(`/customers/${member.id}/adjust-points`, {
-        points: Number(points),
-        note,
-      });
+      const updated = db.adjustCustomerPoints(member.id, Number(points), note);
       onChanged(updated);
       setPoints('');
       setNote('');
