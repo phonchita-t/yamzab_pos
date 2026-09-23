@@ -193,8 +193,28 @@ Requirements on the Jenkins agent:
   Git, JUnit, Timestamper, AnsiColor, and (optional, for the in-Jenkins HTML
   report view) HTML Publisher.
 
-Point a Pipeline job at this repo with "Pipeline script from SCM" → the
-`Jenkinsfile` picks up from there.
+To run Jenkins itself locally with Docker CLI access, build and run
+[`jenkins/Dockerfile`](jenkins/Dockerfile) (Jenkins LTS + `docker-ce-cli`,
+mounting the host's `docker.sock` so pipeline steps can launch containers on
+the host's Docker daemon):
+
+```bash
+docker build -t yamzab-jenkins ./jenkins
+docker run -d --name jenkins -p 8080:8080 -p 50000:50000 \
+  -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  yamzab-jenkins
+```
+
+Then open `http://localhost:8080`, unlock with
+`docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword`,
+install the plugins above, and point a Pipeline job at this repo with
+"Pipeline script from SCM" → the `Jenkinsfile` picks up from there.
+
+If pipeline steps fail with a Docker "permission denied", the `docker` group
+inside the image (gid `999` by default) doesn't match your host's
+`docker.sock` group — rebuild with
+`docker build --build-arg DOCKER_GID=$(stat -c '%g' /var/run/docker.sock) -t yamzab-jenkins ./jenkins`.
 
 ### Static analysis: SonarQube
 

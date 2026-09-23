@@ -9,10 +9,6 @@ node_modules/
 
 # build output
 client/dist/
-server/dist/
-
-# prisma
-server/prisma/*.db
 
 # logs
 *.log
@@ -30,3 +26,6 @@ Thumbs.db
 /playwright-report/
 /playwright/.cache/
 /blob-report/
+
+# SonarQube (local `sonar-scanner` run — see jenkins/Dockerfile / README "SonarQube")
+.scannerwork/
