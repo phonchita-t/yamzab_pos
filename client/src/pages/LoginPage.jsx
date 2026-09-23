@@ -2,11 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
-const QUICK = [
-  { role: 'ผู้ดูแลระบบ', username: 'admin', desc: 'แดชบอร์ด รายงาน เมนู สต็อก พนักงาน' },
-  { role: 'แคชเชียร์', username: 'cashier', desc: 'หน้าขาย ออเดอร์ ชำระเงิน' },
-];
-
 export default function LoginPage() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
@@ -70,29 +65,6 @@ export default function LoginPage() {
           <button className="btn-primary w-full" disabled={busy}>
             {busy ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}
           </button>
-
-          {/* Demo credentials are a dev convenience only — never shown in a production build. */}
-          {import.meta.env.DEV && (
-            <div className="border-t border-stone-200 pt-3">
-              <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-stone-400">
-                บัญชีทดลอง (รหัสผ่าน: password123)
-              </p>
-              <div className="grid gap-2">
-                {QUICK.map((q) => (
-                  <button
-                    type="button"
-                    key={q.username}
-                    onClick={() => setForm({ username: q.username, password: 'password123' })}
-                    className="rounded-xl border border-stone-200 px-3 py-2 text-left text-sm hover:border-chilli-400 hover:bg-chilli-50"
-                  >
-                    <span className="font-bold">{q.role}</span>{' '}
-                    <span className="text-stone-400">· {q.username}</span>
-                    <span className="block text-xs text-stone-500">{q.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </form>
       </div>
     </div>
